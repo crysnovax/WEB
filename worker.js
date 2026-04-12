@@ -336,11 +336,11 @@ export default {
     const tiktokUrl = 'https://www.tiktok.com/@crysnovax?_r=1&_t=ZS-95TCW7pMML7';
     const email = 'crysnovax@gmail.com';
 
-    let pageTitle = 'CRYSNOVA LIVE';
-    if (isDeploy) pageTitle = 'CRYSNOVA DEPLOY';
-    else if (isPlugins) pageTitle = 'CRYSNOVA PLUGINS';
-    else if (isAdminPanel) pageTitle = 'CRYSNOVA ADMIN';
-    else if (isSubmit) pageTitle = 'CRYSNOVA SUBMIT';
+    let pageTitle = 'CRYSN⚉VA LIVE 🜲';
+    if (isDeploy) pageTitle = 'CRYSNⓘVA DEPLOY';
+    else if (isPlugins) pageTitle = 'CRYSN⎔VA PLUGINS';
+    else if (isAdminPanel) pageTitle = 'CRYS❂NVA ADMIN 𓊈𝑽꯭𝑰꯭𝑷ࠡࠡࠡࠡࠢ𓊉';
+    else if (isSubmit) pageTitle = 'CRYSN☉VA SUBMIT ✐';
 
     const infoDot = configStatus.readme ? '🟢' : '🔴';
     const deployDot = configStatus.deploy ? '🟢' : '🔴';
@@ -373,7 +373,7 @@ export default {
       htmlParts.push('<div class="card"><h2>📬 Subscribe to Updates</h2><input type="email" id="subscribe-email" placeholder="Your email" style="width:100%;padding:12px;margin-bottom:1rem;background:#0a0f1e;border:1px solid rgba(6,182,212,0.3);border-radius:8px;color:#e0f2fe"><button onclick="subscribeEmail()" class="copy-btn">Subscribe</button><p id="subscribe-status"></p></div>');
       htmlParts.push('</div>');
     } else if (path === '/deploy') {
-      htmlParts.push('<div class="card"><h2>🚀 Deployment Instructions</h2><div class="instruction"><p><strong>Step 1:</strong> Create a new file in your Pterodactyl panel (or local bot folder).</p><p><strong>Step 2:</strong> Paste the script below and save it as <code>deploy.js</code>.</p><p><strong>Step 3:</strong> Run <code>node deploy.js</code> in your terminal/console.</p><p><strong>Step 4:</strong> Follow the interactive prompts – your configuration will be saved automatically.</p><p><strong>Step 5:</strong> Once complete, the bot will start automatically.</p></div><div style="position:relative"><button class="copy-btn copy-btn-top" onclick="copyCode()">📋 Copy Script</button><div class="code-block"><pre><code id="deploy-script">Loading deployment script...</code></pre></div></div></div>');
+      htmlParts.push('<div class="card"><h2>🚀 Deployment Instructions</h2><div class="instruction"><p><strong>Step 1:</strong> Create a new file in your Pterodactyl panel (or local bot folder).</p><p><strong>Step 2:</strong> Paste the script below and save it as <code>index.js</code>.</p><p><strong>Step 3:</strong> Run <code>node index.js</code> in your terminal/console.</p><p><strong>Step 4:</strong> Follow the interactive prompts – your configuration will be saved automatically.</p><p><strong>Step 5:</strong> Once complete, the bot will start automatically.</p></div><div style="position:relative"><button class="copy-btn copy-btn-top" onclick="copyCode()">📋 Copy Script</button><div class="code-block"><pre><code id="deploy-script">Loading deployment script...</code></pre></div></div></div>');
     } else if (path === '/plugins') {
       htmlParts.push('<div class="card"><h2>🔌 Available Plugins</h2><input type="text" id="plugin-search" placeholder="🔍 Search plugins..." style="width:100%;padding:12px;margin-bottom:1rem;background:#0a0f1e;border:1px solid rgba(6,182,212,0.3);border-radius:8px;color:#e0f2fe"><select id="category-filter" style="width:100%;padding:12px;margin-bottom:1rem;background:#0a0f1e;border:1px solid rgba(6,182,212,0.3);border-radius:8px;color:#e0f2fe"><option value="">All Categories</option><option value="fun">🎮 Fun</option><option value="utility">🔧 Utility</option><option value="ai">🤖 AI</option><option value="admin">🛡️ Admin</option><option value="downloader">📥 Downloader</option></select><div id="plugin-list" class="plugin-grid">Loading plugins...</div></div>');
     } else if (path === '/submit') {
