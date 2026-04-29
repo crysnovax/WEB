@@ -246,7 +246,11 @@ export default {
   if (!submissionData) return new Response(JSON.stringify({ error: 'Submission not found' }), { status: 404 });
   const submission = JSON.parse(submissionData);
   
-  // Upload code to CDN exactly like .raw command
+  // 1. Save to PLUGIN_FILES (keep existing system working)
+  const filename = 'plugins/' + submission.author + '-' + submission.name.replace(/[^a-zA-Z0-9]/g, '_') + '-' + Date.now() + '.js';
+  await env.PLUGIN_FILES.put(filename, submission.code);
+  
+  // 2. Upload to CDN to get raw URL (for .plugin install)
   let rawUrl, cdnUrl;
   try {
     const formData = new FormData();
@@ -258,12 +262,15 @@ export default {
     });
     
     const uploadData = await uploadRes.json();
-    if (!uploadData.url) throw new Error('CDN upload failed');
-    
-    cdnUrl = uploadData.url;
-    rawUrl = cdnUrl.replace(/\/(upload|file)\//, '/raw/').replace(/\.html?$/, '.txt');
+    if (uploadData.url) {
+      cdnUrl = uploadData.url;
+      rawUrl = cdnUrl.replace(/\/(upload|file)\//, '/files/').replace(/\.html?$/, '.txt');
+    }
   } catch (err) {
-    return new Response(JSON.stringify({ error: 'CDN upload failed: ' + err.message }), { status: 500, headers: corsHeaders });
+    console.error('CDN upload failed:', err.message);
+    // Fallback URLs if CDN upload fails
+    cdnUrl = 'https://cdn.crysnovax.link/' + filename;
+    rawUrl = cdnUrl;
   }
   
   const pluginsJson = await env.PLUGIN_STORE.get('plugins');
@@ -274,16 +281,17 @@ export default {
     description: submission.description,
     author: submission.author,
     authorName: submission.authorName,
+    code: submission.code,
     category: submission.category || 'utility',
+    filename: filename,
     url: rawUrl,
-    cdnUrl: cdnUrl,
     customUrl: '',
     verified: true,
     approvedAt: Date.now()
   });
   await env.PLUGIN_STORE.put('plugins', JSON.stringify(plugins));
   await env.SUBMISSION_STORE.delete(id);
-  return new Response(JSON.stringify({ success: true, url: rawUrl, cdnUrl }), { headers: corsHeaders });
+  return new Response(JSON.stringify({ success: true, url: rawUrl }), { headers: corsHeaders });
       }
 
       if (path === '/api/admin/plugins' && method === 'GET') {
@@ -361,6 +369,19 @@ export default {
 //    } 
  // });
 //}
+    // -------------------- RAW FILE SERVING --------------------
+if (path.startsWith('/raw/')) {
+  const filePath = path.slice(5);
+  const content = await env.PLUGIN_FILES.get(filePath);
+  if (!content) return new Response('File not found', { status: 404 });
+  return new Response(content, { 
+    headers: { 
+      'Content-Type': 'text/plain;charset=UTF-8',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'public, max-age=3600'
+    } 
+  });
+}
 
 // -------------------- PLUGIN DETAIL PAGE --------------------
 if (path.startsWith('/plugin/')) {
