@@ -210,34 +210,68 @@ export default {
         return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
       }
 
+     // if (path === '/api/admin/approve' && method === 'POST') {
+   //     const { id } = await request.json();
+       // if (!id) return new Response(JSON.stringify({ error: 'Missing id' }), { status: 400 });
+   //     const submissionData = await env.SUBMISSION_STORE.get(id);
+     //   if (!submissionData) return new Response(JSON.stringify({ error: 'Submission not found' }), { status: 404 });
+   //     const submission = JSON.parse(submissionData);
+    //    const filename = 'plugins/' + submission.author + '-' + submission.name.replace(/[^a-zA-Z0-9]/g, '_') + '-' + Date.now() + '.js';
+   //     await env.PLUGIN_FILES.put(filename, submission.code);
+    //    const cdnUrl = 'https://cdn.crysnovax.link/' + filename;
+     //   const pluginsJson = await env.PLUGIN_STORE.get('plugins');
+     //   const plugins = pluginsJson ? JSON.parse(pluginsJson) : [];
+    //    plugins.push({
+    //      id: crypto.randomUUID(),
+     //     name: submission.name,
+     //     description: submission.description,
+  //        author: submission.author,
+      //    authorName: submission.authorName,
+    //      code: submission.code,
+     //     category: submission.category || 'utility',
+     //     filename: filename,
+     //     url: cdnUrl,
+      //    customUrl: '',
+    //      verified: true,
+       //   approvedAt: Date.now()
+     //   });
+     //   await env.PLUGIN_STORE.put('plugins', JSON.stringify(plugins));
+      //  await env.SUBMISSION_STORE.delete(id);
+    //    return new Response(JSON.stringify({ success: true, url: cdnUrl }), { headers: corsHeaders });
+  //    }
       if (path === '/api/admin/approve' && method === 'POST') {
-        const { id } = await request.json();
-        if (!id) return new Response(JSON.stringify({ error: 'Missing id' }), { status: 400 });
-        const submissionData = await env.SUBMISSION_STORE.get(id);
-        if (!submissionData) return new Response(JSON.stringify({ error: 'Submission not found' }), { status: 404 });
-        const submission = JSON.parse(submissionData);
-        const filename = 'plugins/' + submission.author + '-' + submission.name.replace(/[^a-zA-Z0-9]/g, '_') + '-' + Date.now() + '.js';
-        await env.PLUGIN_FILES.put(filename, submission.code);
-        const cdnUrl = 'https://cdn.crysnovax.link/' + filename;
-        const pluginsJson = await env.PLUGIN_STORE.get('plugins');
-        const plugins = pluginsJson ? JSON.parse(pluginsJson) : [];
-        plugins.push({
-          id: crypto.randomUUID(),
-          name: submission.name,
-          description: submission.description,
-          author: submission.author,
-          authorName: submission.authorName,
-          code: submission.code,
-          category: submission.category || 'utility',
-          filename: filename,
-          url: cdnUrl,
-          customUrl: '',
-          verified: true,
-          approvedAt: Date.now()
-        });
-        await env.PLUGIN_STORE.put('plugins', JSON.stringify(plugins));
-        await env.SUBMISSION_STORE.delete(id);
-        return new Response(JSON.stringify({ success: true, url: cdnUrl }), { headers: corsHeaders });
+  const { id } = await request.json();
+  if (!id) return new Response(JSON.stringify({ error: 'Missing id' }), { status: 400 });
+  const submissionData = await env.SUBMISSION_STORE.get(id);
+  if (!submissionData) return new Response(JSON.stringify({ error: 'Submission not found' }), { status: 404 });
+  const submission = JSON.parse(submissionData);
+  const filename = 'plugins/' + submission.author + '-' + submission.name.replace(/[^a-zA-Z0-9]/g, '_') + '-' + Date.now() + '.js';
+  await env.PLUGIN_FILES.put(filename, submission.code);
+  
+  // Generate BOTH URLs — raw URL for .plugin install, CDN URL for web
+  const cdnUrl = 'https://cdn.crysnovax.link/' + filename;
+  const rawUrl = 'https://cdn.crysnovax.link/raw/' + filename;
+  
+  const pluginsJson = await env.PLUGIN_STORE.get('plugins');
+  const plugins = pluginsJson ? JSON.parse(pluginsJson) : [];
+  plugins.push({
+    id: crypto.randomUUID(),
+    name: submission.name,
+    description: submission.description,
+    author: submission.author,
+    authorName: submission.authorName,
+    code: submission.code,
+    category: submission.category || 'utility',
+    filename: filename,
+    url: rawUrl,
+    cdnUrl: cdnUrl,
+    customUrl: '',
+    verified: true,
+    approvedAt: Date.now()
+  });
+  await env.PLUGIN_STORE.put('plugins', JSON.stringify(plugins));
+  await env.SUBMISSION_STORE.delete(id);
+  return new Response(JSON.stringify({ success: true, url: rawUrl, cdnUrl }), { headers: corsHeaders });
       }
 
       if (path === '/api/admin/plugins' && method === 'GET') {
@@ -301,21 +335,54 @@ export default {
     }
 
     // -------------------- PLUGIN DETAIL PAGE --------------------
-    if (path.startsWith('/plugin/')) {
-      const pluginId = path.slice(8);
-      const pluginsJson = await env.PLUGIN_STORE.get('plugins');
-      const plugins = pluginsJson ? JSON.parse(pluginsJson) : [];
-      const plugin = plugins.find(p => p.id === pluginId);
-      if (!plugin) return new Response('Plugin not found', { status: 404 });
-      const downloads = await env.STATS_STORE.get('downloads:' + pluginId) || '0';
-      const list = await env.RATINGS_STORE.list({ prefix: 'rating:' + pluginId + ':' });
-      let sum = 0, cnt = 0;
-      for (const k of list.keys) { const v = await env.RATINGS_STORE.get(k.name); if (v) { sum += parseInt(v); cnt++; } }
-      const avgRating = cnt > 0 ? (sum / cnt).toFixed(1) : '0.0';
-      const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${plugin.name} - CRYSNOVA</title><style>body{background:#0a0f1e;color:#e0f2fe;font-family:Inter;padding:2rem}pre{background:#0d1528;padding:1rem;border-radius:8px;overflow:auto}</style></head><body><h1>${plugin.name}</h1><p>${plugin.description}</p><p>👤 ${plugin.authorName || plugin.author} | ⬇️ ${downloads} | ⭐ ${avgRating} (${cnt})</p><h3>Installation</h3><code>.plugin ${plugin.customUrl || plugin.url}</code><h3>Source Code</h3><pre>${escapeHtml(plugin.code)}</pre><p><a href="/plugins">← Back to Plugins</a></p></body></html>`;
-      return new Response(html, { headers: { 'Content-Type': 'text/html' } });
-    }
-    function escapeHtml(text) { return text.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]); }
+    // -------------------- RAW FILE SERVING --------------------
+    // -------------------- RAW FILE SERVING --------------------
+if (path.startsWith('/raw/')) {
+  const filePath = path.slice(5);
+  const content = await env.PLUGIN_FILES.get(filePath);
+  if (!content) return new Response('File not found', { status: 404 });
+  return new Response(content, { 
+    headers: { 
+      'Content-Type': 'text/plain;charset=UTF-8',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'public, max-age=3600'
+    } 
+  });
+}
+
+// -------------------- PLUGIN DETAIL PAGE --------------------
+if (path.startsWith('/plugin/')) {
+  const pluginId = path.slice(8);
+  const pluginsJson = await env.PLUGIN_STORE.get('plugins');
+  const plugins = pluginsJson ? JSON.parse(pluginsJson) : [];
+  const plugin = plugins.find(p => p.id === pluginId);
+  if (!plugin) return new Response('Plugin not found', { status: 404 });
+  const downloads = await env.STATS_STORE.get('downloads:' + pluginId) || '0';
+  const list = await env.RATINGS_STORE.list({ prefix: 'rating:' + pluginId + ':' });
+  let sum = 0, cnt = 0;
+  for (const k of list.keys) { const v = await env.RATINGS_STORE.get(k.name); if (v) { sum += parseInt(v); cnt++; } }
+  const avgRating = cnt > 0 ? (sum / cnt).toFixed(1) : '0.0';
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${plugin.name} - CRYSNOVA</title><style>body{background:#0a0f1e;color:#e0f2fe;font-family:Inter;padding:2rem}pre{background:#0d1528;padding:1rem;border-radius:8px;overflow:auto}</style></head><body><h1>${plugin.name}</h1><p>${plugin.description}</p><p>👤 ${plugin.authorName || plugin.author} | ⬇️ ${downloads} | ⭐ ${avgRating} (${cnt})</p><h3>Installation</h3><code>.plugin ${plugin.customUrl || plugin.url}</code><h3>Source Code</h3><pre>${escapeHtml(plugin.code)}</pre><p><a href="/plugins">← Back to Plugins</a></p></body></html>`;
+  return new Response(html, { headers: { 'Content-Type': 'text/html' } });
+}
+function escapeHtml(text) { return text.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]); }
+
+    
+  //  if (path.startsWith('/plugin/')) {
+    //  const pluginId = path.slice(8);
+   //   const pluginsJson = await env.PLUGIN_STORE.get('plugins');
+  //    const plugins = pluginsJson ? JSON.parse(pluginsJson) : [];
+   //   const plugin = plugins.find(p => p.id === pluginId);
+  //    if (!plugin) return new Response('Plugin not found', { status: 404 });
+  //    const downloads = await env.STATS_STORE.get('downloads:' + pluginId) || '0';
+    //  const list = await env.RATINGS_STORE.list({ prefix: 'rating:' + pluginId + ':' });
+ //     let sum = 0, cnt = 0;
+ //     for (const k of list.keys) { const v = await env.RATINGS_STORE.get(k.name); if (v) { sum += parseInt(v); cnt++; } }
+   //   const avgRating = cnt > 0 ? (sum / cnt).toFixed(1) : '0.0';
+ //     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${plugin.name} - CRYSNOVA</title><style>body{background:#0a0f1e;color:#e0f2fe;font-family:Inter;padding:2rem}pre{background:#0d1528;padding:1rem;border-radius:8px;overflow:auto}</style></head><body><h1>${plugin.name}</h1><p>${plugin.description}</p><p>👤 ${plugin.authorName || plugin.author} | ⬇️ ${downloads} | ⭐ ${avgRating} (${cnt})</p><h3>Installation</h3><code>.plugin ${plugin.customUrl || plugin.url}</code><h3>Source Code</h3><pre>${escapeHtml(plugin.code)}</pre><p><a href="/plugins">← Back to Plugins</a></p></body></html>`;
+   //   return new Response(html, { headers: { 'Content-Type': 'text/html' } });
+  //  }
+   // function escapeHtml(text) { return text.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]); }
 
     // -------------------- API DOCS PAGE --------------------
     if (path === '/docs') {
