@@ -245,12 +245,26 @@ export default {
   const submissionData = await env.SUBMISSION_STORE.get(id);
   if (!submissionData) return new Response(JSON.stringify({ error: 'Submission not found' }), { status: 404 });
   const submission = JSON.parse(submissionData);
-  const filename = 'plugins/' + submission.author + '-' + submission.name.replace(/[^a-zA-Z0-9]/g, '_') + '-' + Date.now() + '.js';
-  await env.PLUGIN_FILES.put(filename, submission.code);
   
-  // Generate BOTH URLs — raw URL for .plugin install, CDN URL for web
-  const cdnUrl = 'https://cdn.crysnovax.link/' + filename;
-  const rawUrl = 'https://cdn.crysnovax.link/raw/' + filename;
+  // Upload code to CDN exactly like .raw command
+  let rawUrl, cdnUrl;
+  try {
+    const formData = new FormData();
+    formData.append('file', new Blob([submission.code], { type: 'text/plain' }), 'paste.txt');
+    
+    const uploadRes = await fetch(env.CDN_URL + '/upload', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const uploadData = await uploadRes.json();
+    if (!uploadData.url) throw new Error('CDN upload failed');
+    
+    cdnUrl = uploadData.url;
+    rawUrl = cdnUrl.replace(/\/(upload|file)\//, '/raw/').replace(/\.html?$/, '.txt');
+  } catch (err) {
+    return new Response(JSON.stringify({ error: 'CDN upload failed: ' + err.message }), { status: 500, headers: corsHeaders });
+  }
   
   const pluginsJson = await env.PLUGIN_STORE.get('plugins');
   const plugins = pluginsJson ? JSON.parse(pluginsJson) : [];
@@ -260,9 +274,7 @@ export default {
     description: submission.description,
     author: submission.author,
     authorName: submission.authorName,
-    code: submission.code,
     category: submission.category || 'utility',
-    filename: filename,
     url: rawUrl,
     cdnUrl: cdnUrl,
     customUrl: '',
@@ -337,18 +349,18 @@ export default {
     // -------------------- PLUGIN DETAIL PAGE --------------------
     // -------------------- RAW FILE SERVING --------------------
     // -------------------- RAW FILE SERVING --------------------
-if (path.startsWith('/raw/')) {
-  const filePath = path.slice(5);
-  const content = await env.PLUGIN_FILES.get(filePath);
-  if (!content) return new Response('File not found', { status: 404 });
-  return new Response(content, { 
-    headers: { 
-      'Content-Type': 'text/plain;charset=UTF-8',
-      'Access-Control-Allow-Origin': '*',
-      'Cache-Control': 'public, max-age=3600'
-    } 
-  });
-}
+//if (path.startsWith('/raw/')) {
+//  const filePath = path.slice(5);
+//  const content = await env.PLUGIN_FILES.get(filePath);
+ // if (!content) return new Response('File not found', { status: 404 });
+//  return new Response(content, { 
+//    headers: { 
+   //   'Content-Type': 'text/plain;charset=UTF-8',
+    //  'Access-Control-Allow-Origin': '*',
+  //   'Cache-Control': 'public, max-age=3600'
+//    } 
+ // });
+//}
 
 // -------------------- PLUGIN DETAIL PAGE --------------------
 if (path.startsWith('/plugin/')) {
