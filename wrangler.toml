@@ -1,8 +1,11 @@
-name = "crysnova-live"
+name = "web"
 main = "worker.js"
 compatibility_date = "2026-04-12"
 
-# Existing KV Namespaces
+[vars]
+README_URL = "https://raw.githubusercontent.com/crysnovax/CRYSNOVA_AI/refs/heads/main/README.md"
+DEPLOY_README_URL = "https://raw.githubusercontent.com/crysnovax/CRYSNOVA_PLUGINS/refs/heads/main/README.md"
+
 [[kv_namespaces]]
 binding = "PLUGIN_STORE"
 id = "ecba86a1f0e444d5b07ae5cb34481f45"
@@ -15,7 +18,6 @@ id = "be7966bfdc284bb6b524f3e6e7645504"
 binding = "CRYSNOVA_CACHE"
 id = "9793aeea733344529bc27cd26a13f523"
 
-# New KV Namespaces for Stats and Ratings
 [[kv_namespaces]]
 binding = "STATS_STORE"
 id = "4068c51e830b4df4b2dbe272d17ab1bd"
@@ -24,21 +26,11 @@ id = "4068c51e830b4df4b2dbe272d17ab1bd"
 binding = "RATINGS_STORE"
 id = "1ed8d94f0f194e9f94c28f23a21a5990"
 
-# Existing R2 Bucket
 [[r2_buckets]]
 binding = "PLUGIN_FILES"
 bucket_name = "zee"
 
-# D1 Database for Email Subscribers
 [[d1_databases]]
 binding = "DB"
 database_name = "crysnova_live_db"
 database_id = "d950d208-f2e4-42e4-b97f-20c932caa30b"
-
-# Secrets (set these via Cloudflare Dashboard or `wrangler secret put`)
-# GITHUB_CLIENT_ID
-# GITHUB_CLIENT_SECRET
-# ADMIN_PASSWORD
-# README_URL
-# DEPLOY_README_URL
-# RESEND_API_KEY   (optional – for email notifications)
