@@ -1,5 +1,5 @@
 {
-  "name": "crysnova-live",
+  "name": "web",
   "version": "1.0.0",
   "description": "CRYSNOVA LIVE – Plugin Marketplace and Documentation",
   "main": "worker.js",
